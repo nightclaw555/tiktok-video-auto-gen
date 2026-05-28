@@ -468,8 +468,12 @@
   </div>
 
   <script>
-    // Auto-init n8n connection settings (force set every load)
-    localStorage.setItem('n8nUrl', 'http://localhost:5678');
+    // Smart auto-init n8n connection settings
+    if (window.location.hostname.includes('github.io') || window.location.hostname.includes('ayaigaldie.online')) {
+      localStorage.setItem('n8nUrl', 'https://n8n.ayaigaldie.online');
+    } else {
+      localStorage.setItem('n8nUrl', 'http://localhost:5678');
+    }
     localStorage.setItem('n8nUser', 'noppasit99@gmail.com');
     localStorage.setItem('n8nPass', 'Onemore123');
 
