@@ -10,6 +10,90 @@
   <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
+
+  <!-- ========== LOGIN OVERLAY ========== -->
+  <div id="login-overlay" style="
+    display: none;
+    position: fixed; inset: 0; z-index: 9999;
+    background: linear-gradient(135deg, #0d0d1a 0%, #1a0d2e 50%, #0d1a2e 100%);
+    align-items: center; justify-content: center;
+    flex-direction: column; font-family: 'Outfit', sans-serif;
+  ">
+    <div style="
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 24px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 400px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+      text-align: center;
+    ">
+      <!-- Logo -->
+      <div style="margin-bottom: 8px;">
+        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="url(#lg)" stroke-width="2">
+          <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#a78bfa"/><stop offset="100%" stop-color="#38bdf8"/></linearGradient></defs>
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </div>
+      <h1 style="color: #fff; font-size: 22px; font-weight: 700; margin: 0 0 6px;">TikTok Auto-Gen</h1>
+      <p style="color: rgba(255,255,255,0.45); font-size: 13px; margin: 0 0 32px;">กรุณาใส่รหัสผ่านเพื่อเข้าใช้งาน</p>
+
+      <div id="login-error" style="
+        display: none;
+        background: rgba(239,68,68,0.15);
+        border: 1px solid rgba(239,68,68,0.4);
+        color: #fca5a5;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 13px;
+        margin-bottom: 16px;
+      "></div>
+
+      <div id="login-info" style="
+        display: none;
+        background: rgba(56,189,248,0.12);
+        border: 1px solid rgba(56,189,248,0.3);
+        color: #7dd3fc;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 13px;
+        margin-bottom: 16px;
+      ">🔐 ยังไม่มีรหัสผ่าน — รหัสที่คุณใส่ครั้งแรกจะถูกตั้งเป็นรหัสผ่านใหม่</div>
+
+      <input id="login-pass-input" type="password" placeholder="รหัสผ่าน Dashboard" autocomplete="current-password" style="
+        width: 100%; box-sizing: border-box;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 12px;
+        padding: 14px 16px;
+        color: #fff;
+        font-size: 15px;
+        font-family: 'Outfit', sans-serif;
+        outline: none;
+        margin-bottom: 16px;
+        transition: border-color 0.2s;
+      " onkeydown="if(event.key==='Enter') doLogin()" onfocus="this.style.borderColor='rgba(167,139,250,0.6)'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'" />
+
+      <button onclick="doLogin()" style="
+        width: 100%;
+        background: linear-gradient(135deg, #7c3aed, #2563eb);
+        border: none; border-radius: 12px;
+        color: #fff; font-size: 15px; font-weight: 600;
+        padding: 14px; cursor: pointer;
+        font-family: 'Outfit', sans-serif;
+        transition: opacity 0.2s, transform 0.1s;
+        box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+      " onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+        🔓 เข้าสู่ระบบ
+      </button>
+
+      <p style="color: rgba(255,255,255,0.2); font-size: 11px; margin: 20px 0 0;">Javis AI v4.0 — Private Dashboard</p>
+    </div>
+  </div>
+  <!-- ===================================== -->
   <div class="dashboard-wrapper">
     <!-- Side Navigation -->
     <aside class="sidebar">
@@ -468,6 +552,56 @@
   </div>
 
   <script>
+    // ===== DASHBOARD LOGIN GUARD =====
+    async function hashPassword(pass) {
+      const enc = new TextEncoder().encode(pass);
+      const buf = await crypto.subtle.digest('SHA-256', enc);
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    }
+
+    async function doLogin() {
+      const input = document.getElementById('login-pass-input').value.trim();
+      const errEl = document.getElementById('login-error');
+      errEl.style.display = 'none';
+      if (!input) { errEl.textContent = '⚠️ กรุณาใส่รหัสผ่าน'; errEl.style.display = 'block'; return; }
+      const hashed = await hashPassword(input);
+      const stored = localStorage.getItem('dashboardPassHash');
+      if (!stored) {
+        // First time: set password
+        localStorage.setItem('dashboardPassHash', hashed);
+        unlockDashboard();
+      } else if (hashed === stored) {
+        unlockDashboard();
+      } else {
+        errEl.textContent = '❌ รหัสผ่านไม่ถูกต้อง';
+        errEl.style.display = 'block';
+        document.getElementById('login-pass-input').value = '';
+        document.getElementById('login-pass-input').focus();
+      }
+    }
+
+    function unlockDashboard() {
+      document.getElementById('login-overlay').style.display = 'none';
+      sessionStorage.setItem('dashUnlocked', '1');
+    }
+
+    function checkLoginStatus() {
+      const overlay = document.getElementById('login-overlay');
+      // Already unlocked this session
+      if (sessionStorage.getItem('dashUnlocked') === '1') { return; }
+      // Show overlay
+      overlay.style.display = 'flex';
+      // Show first-time setup hint if no password set
+      if (!localStorage.getItem('dashboardPassHash')) {
+        document.getElementById('login-info').style.display = 'block';
+      }
+      setTimeout(() => document.getElementById('login-pass-input').focus(), 100);
+    }
+
+    // Run on load
+    checkLoginStatus();
+    // ===================================
+
     // Smart auto-init n8n connection settings
     if (!localStorage.getItem('n8nUrl')) {
       if (window.location.hostname.includes('github.io') || window.location.hostname.includes('ayaigaldie.online')) {
