@@ -620,7 +620,27 @@ function resumeProcesses() {
 }
 
 // Generate Video Pipeline (Workflow 1)
+// Uses a 15-minute timeout so long-running n8n workflows don't get cut off by the browser
 async function startGeneratePipeline() {
+  const TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
+  let abortController = new AbortController();
+  let countdownTimer = null;
+
+  // Show live countdown so user knows the app is working
+  function startCountdown(totalMs) {
+    const statusMsgEl = document.getElementById('generate-status-msg');
+    if (!statusMsgEl) return;
+    let remaining = Math.ceil(totalMs / 1000);
+    countdownTimer = setInterval(() => {
+      remaining--;
+      const mins = Math.floor(remaining / 60);
+      const secs = remaining % 60;
+      const timeStr = mins > 0 ? `${mins} นาที ${secs} วินาที` : `${secs} วินาที`;
+      statusMsgEl.textContent = `⏳ กำลังประมวลผล AI... (หมดเวลาใน ${timeStr})`;
+      if (remaining <= 0) clearInterval(countdownTimer);
+    }, 1000);
+  }
+
   try {
     resetState('generate');
     appState.generate.status = 'uploading';
@@ -629,26 +649,60 @@ async function startGeneratePipeline() {
     saveAppState();
 
     const { headers, n8nUrl } = getAuthHeaders();
-    
+
     // Create multipart form
     const imageBlob = dataURItoBlob(appState.generate.imageData);
     const formData = new FormData();
     formData.append('data', imageBlob, appState.generate.fileName);
-
     if (appState.generate.videoStyleText) {
       formData.append('video_style', appState.generate.videoStyleText);
     }
 
-    console.log("Submitting image to n8n Webhook...");
-    const response = await fetch(`${n8nUrl}/webhook/generate-video-ext`, {
-      method: 'POST',
-      headers: headers,
-      body: formData
-    });
+    // Set auto-abort after 15 minutes
+    const timeoutId = setTimeout(() => abortController.abort(), TIMEOUT_MS);
+
+    console.log("Submitting image to n8n Webhook (timeout: 15 min)...");
+
+    // Switch UI to 'waiting_ai' so user sees processing message before response
+    appState.generate.status = 'waiting_ai';
+    appState.generate.progressStep = 2;
+    updateGenerateUI();
+    startCountdown(TIMEOUT_MS);
+
+    let response;
+    try {
+      response = await fetch(`${n8nUrl}/webhook/generate-video-ext`, {
+        method: 'POST',
+        headers: headers,
+        body: formData,
+        signal: abortController.signal
+      });
+    } catch (fetchErr) {
+      clearTimeout(timeoutId);
+      if (countdownTimer) clearInterval(countdownTimer);
+
+      // If aborted (timeout) but job was started, don't error — just poll
+      if (fetchErr.name === 'AbortError') {
+        console.warn("Fetch timed out after 15 min. Job may still be running. Switching to polling...");
+        appState.generate.status = 'waiting';
+        appState.generate.progressStep = 2;
+        appState.generate.productId = null; // unknown — poll will discover via history
+        updateGenerateUI();
+        saveAppState();
+        // Show soft warning instead of hard error
+        const statusMsgEl = document.getElementById('generate-status-msg');
+        if (statusMsgEl) statusMsgEl.textContent = '⚠️ รอนานเกินกว่ากำหนด แต่งานอาจยังทำงานอยู่ กรุณาตรวจสอบที่ "คลังประวัติงาน"';
+        return;
+      }
+      throw fetchErr;
+    }
+
+    clearTimeout(timeoutId);
+    if (countdownTimer) clearInterval(countdownTimer);
 
     // Check if user clicked cancel during upload
-    if (appState.generate.status !== 'uploading') {
-      console.log("Generate process canceled during upload. Aborting.");
+    if (appState.generate.status !== 'waiting_ai') {
+      console.log("Generate process canceled. Aborting.");
       return;
     }
 
@@ -665,11 +719,12 @@ async function startGeneratePipeline() {
     appState.generate.status = 'waiting';
     appState.generate.productId = result.product_id;
     appState.generate.progress = 0;
-    
     saveAppState();
     updateGenerateUI();
     startGeneratePolling(n8nUrl, headers, result.product_id);
+
   } catch (err) {
+    if (countdownTimer) clearInterval(countdownTimer);
     appState.generate.status = 'error';
     appState.generate.error = err.message;
     updateGenerateUI();
@@ -680,6 +735,11 @@ async function startGeneratePipeline() {
 
 function startGeneratePolling(n8nUrl, headers, productId) {
   if (generatePollInterval) clearInterval(generatePollInterval);
+
+  // Count consecutive errors — only give up after 3 in a row
+  // This handles workflows with continueOnFail that temporarily show "error" then recover to "done"
+  let consecutiveErrors = 0;
+  const MAX_CONSECUTIVE_ERRORS = 3;
 
   generatePollInterval = setInterval(async () => {
     try {
@@ -693,37 +753,65 @@ function startGeneratePolling(n8nUrl, headers, productId) {
       console.log("Generate Poll Status Data:", data);
 
       if (data.status === 'done' || data.status === 'success') {
+        // ✅ งานเสร็จสมบูรณ์
         clearInterval(generatePollInterval);
         generatePollInterval = null;
+        consecutiveErrors = 0;
         appState.generate.status = 'completed';
         appState.generate.videoUrl = data.video || '';
+        appState.generate.soundPrompt = data.sound_prompt || '';
+        appState.generate.productId = productId;
+
       } else if (data.status === 'fail' || data.status === 'error') {
-        clearInterval(generatePollInterval);
-        generatePollInterval = null;
-        appState.generate.status = 'error';
-        appState.generate.error = data.message || 'Error occurred';
+        // ⚠️ อาจเป็น error ชั่วคราว (continueOnFail) — รอดูอีกสักครู่
+        consecutiveErrors++;
+        console.warn(`Poll got error status (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS}): ${data.message || ''}`);
+
+        const statusMsgEl = document.getElementById('generate-status-msg');
+        if (statusMsgEl) {
+          statusMsgEl.textContent = `⚠️ พบปัญหาชั่วคราว กำลังรอผลอีกครั้ง... (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS})`;
+        }
+
+        if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+          // หยุดก็ต่อเมื่อ error ติดกัน 3 ครั้ง
+          clearInterval(generatePollInterval);
+          generatePollInterval = null;
+          appState.generate.status = 'error';
+          appState.generate.error = data.message || 'เกิดข้อผิดพลาดจาก workflow';
+        } else {
+          // ยัง poll ต่อ
+          appState.generate.status = 'waiting_ai';
+        }
+
       } else {
+        // กำลังทำงานอยู่ — reset error counter
+        consecutiveErrors = 0;
         appState.generate.progress = data.progress || 0;
         appState.generate.status = data.status || 'waiting';
       }
 
       updateGenerateUI();
       saveAppState();
+
     } catch (err) {
+      consecutiveErrors++;
+      console.warn(`Poll network error (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS}):`, err.message);
+
       if (appState.generate.status === 'idle') {
         clearInterval(generatePollInterval);
         generatePollInterval = null;
         return;
       }
 
-      clearInterval(generatePollInterval);
-      generatePollInterval = null;
-
-      appState.generate.status = 'error';
-      appState.generate.error = err.message;
-      updateGenerateUI();
-      saveAppState();
-      alert(`เกิดข้อผิดพลาดในการตรวจสอบสถานะ: ${err.message}`);
+      if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+        clearInterval(generatePollInterval);
+        generatePollInterval = null;
+        appState.generate.status = 'error';
+        appState.generate.error = err.message;
+        updateGenerateUI();
+        saveAppState();
+        alert(`เกิดข้อผิดพลาดในการตรวจสอบสถานะ: ${err.message}`);
+      }
     }
   }, 5000);
 }
