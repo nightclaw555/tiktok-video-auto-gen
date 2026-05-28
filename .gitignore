@@ -1,0 +1,9 @@
+# n8n log files
+n8n_console.log
+n8n_err.log
+n8n_out.log
+*.log
+
+# Windows thumbnail cache
+Thumbs.db
+desktop.ini

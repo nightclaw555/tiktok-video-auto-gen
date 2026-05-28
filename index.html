@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TikTok Video Auto-Gen Dashboard - by Javis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=3">
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <!-- Side Navigation -->
+    <aside class="sidebar">
+      <div class="logo-area">
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M23 7a2 2 0 0 0-2.45-1.45L16 7V5a2 2 0 0 0-2-2H2a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2l4.55 1.45A2 2 0 0 0 23 17V7z" />
+          <path d="M6 10h4" />
+          <path d="M6 14h4" />
+        </svg>
+        <span class="logo-text">TikTok <span class="highlight">Auto-Gen</span></span>
+      </div>
+      
+      <div class="connection-status">
+        <span class="status-dot offline" id="connection-dot"></span>
+        <span id="connection-text">เชื่อมต่อ n8n: ตรวจสอบ...</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-btn active" data-tab="tab-generate" onclick="switchTab('tab-generate')">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          <span>เจนวิดีโอ (Step 1)</span>
+        </button>
+        <button class="nav-btn" data-tab="tab-merge" onclick="switchTab('tab-merge')">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+          <span>รวมเสียงพากย์ (Step 2)</span>
+        </button>
+        <button class="nav-btn" data-tab="tab-history" onclick="switchTab('tab-history')">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span>คลังประวัติงาน</span>
+        </button>
+        <button class="nav-btn" data-tab="tab-settings" onclick="switchTab('tab-settings')">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <span>ตั้งค่าความปลอดภัย</span>
+        </button>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <span class="javis-signature">Javis AI v4.0</span>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- TAB 1: GENERATE VIDEO -->
+      <section id="tab-generate" class="tab-pane active">
+        <div class="pane-header">
+          <h2>สร้างวิดีโอตัวดิบ (Workflow 1)</h2>
+          <p class="pane-subtitle">อัปโหลดรูปภาพตัวอย่าง วิเคราะห์รายละเอียด และสร้างคลิปวิดีโอด้วย AI</p>
+        </div>
+        
+        <div class="grid-layout">
+          <!-- Form Area -->
+          <div class="card card-form">
+            <div class="form-group">
+              <label>อัปโหลดรูปภาพสินค้า/รีวิว</label>
+              <div id="image-dropzone" class="dropzone">
+                <input type="file" id="image-input" accept="image/*" class="file-input">
+                <div class="dropzone-content">
+                  <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  <p class="main-text">ลากและวางรูปภาพที่นี่</p>
+                  <p class="sub-text">หรือคลิกเพื่อเลือกไฟล์รูปภาพ (.jpg, .png)</p>
+                </div>
+                <div id="image-preview-container" class="preview-container hidden">
+                  <img id="image-preview" src="" alt="Preview">
+                  <button id="btn-remove-image" class="btn-remove">&times;</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="generate-video-style-select">แนวทางการสร้างคลิป</label>
+              <select id="generate-video-style-select" class="text-input">
+                <option value="default">เน้นฟังก์ชั่นการใช้งาน (ค่าเริ่มต้น)</option>
+                <option value="cute">ออกแนวน่ารัก</option>
+                <option value="product_focus">เน้นสินค้า</option>
+                <option value="product_with_model">เน้นสินค้าพร้อมกับตัวแบบ</option>
+                <option value="luxury">เน้นความหรูหรา</option>
+                <option value="custom">กำหนดเอง...</option>
+              </select>
+            </div>
+
+            <div id="generate-video-style-text-container" class="form-group">
+              <label for="generate-video-style-text">รายละเอียดแนวทาง Prompt</label>
+              <div class="prompt-box">
+                <textarea id="generate-video-style-text" rows="3" class="text-input" style="resize: none;"></textarea>
+                <button id="btn-reset-video-style" class="btn-secondary-action">คืนค่าเริ่มต้น</button>
+              </div>
+            </div>
+
+            <button id="btn-generate" class="btn-primary" disabled>
+              <span>เริ่มสร้างวิดีโอ (Run Workflow 1)</span>
+            </button>
+          </div>
+
+          <!-- Progress & Status Area -->
+          <div class="card card-status">
+            <div id="generate-idle-placeholder" class="status-placeholder">
+              <svg viewBox="0 0 24 24" width="64" height="64" stroke="currentColor" stroke-width="1" fill="none" class="floating-icon"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <h3>พร้อมทำงาน</h3>
+              <p>กรุณาอัปโหลดรูปภาพและเลือกแนวทางการสร้าง แล้วกดปุ่มเพื่อเริ่มประมวลผล</p>
+            </div>
+
+            <div id="generate-status-container" class="status-active-container hidden">
+              <h3 class="status-title">สถานะความคืบหน้า</h3>
+              
+              <div class="stepper">
+                <div class="step" id="step-g-1">
+                  <div class="step-circle">1</div>
+                  <div class="step-label">อัปโหลดภาพเข้า Google Drive</div>
+                </div>
+                <div class="step" id="step-g-2">
+                  <div class="step-circle">2</div>
+                  <div class="step-label">รอวิเคราะห์ภาพและเขียนบทพากย์</div>
+                </div>
+                <div class="step" id="step-g-3">
+                  <div class="step-circle">3</div>
+                  <div class="step-label">เจนวิดีโอด้วย AI (Kling AI)</div>
+                </div>
+              </div>
+              
+              <button id="btn-cancel-generate" class="btn-cancel">
+                <span>ยกเลิกและรีเซ็ตสถานะ</span>
+              </button>
+
+              <div id="generate-results" class="results-panel hidden">
+                <hr class="divider">
+                
+                <div class="result-row">
+                  <span class="result-label">รหัสสินค้า (Product ID):</span>
+                  <div class="copy-box">
+                    <input type="text" id="result-product-id" readonly class="text-input-copy">
+                    <button id="btn-copy-pid" class="btn-action">คัดลอก</button>
+                  </div>
+                </div>
+
+                <div class="result-row">
+                  <span class="result-label">บทพากย์เสียงที่สร้างได้ (Sound Prompt):</span>
+                  <div class="prompt-box">
+                    <textarea id="result-sound-prompt" readonly rows="4" class="textarea-copy"></textarea>
+                    <button id="btn-copy-prompt" class="btn-action-text">คัดลอกบทพากย์</button>
+                  </div>
+                </div>
+
+                <button id="btn-go-to-merge" class="btn-success-action" style="margin-top: 15px; width: 100%;">
+                  <span>ไปที่ขั้นตอน "รวมเสียงพากย์" ถัดไป</span>
+                  <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: MERGE VOICE OVER -->
+      <section id="tab-merge" class="tab-pane">
+        <div class="pane-header">
+          <h2>รวมไฟล์เสียงเข้ากับวิดีโอ (Workflow 2)</h2>
+          <p class="pane-subtitle">เลือกงานที่ยังไม่ใส่ไฟล์เสียงพากย์ อัปโหลดไฟล์เสียง <strong>.mp3</strong> หรือ <strong>.wav</strong> เพื่อนำมารวมไฟล์ด้วย FFmpeg</p>
+        </div>
+
+        <div class="grid-layout-three">
+          <!-- 10 Recent Jobs List Panel -->
+          <div class="card card-recent-jobs">
+            <div class="recent-jobs-header">
+              <h3>งานดิบล่าสุด (ค้างใส่เสียงพากย์)</h3>
+              <button id="btn-refresh-jobs" class="btn-refresh" title="ดึงข้อมูลใหม่" type="button">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              </button>
+            </div>
+            <div id="recent-jobs-list" class="recent-jobs-list-container">
+              <!-- Dynamically populated -->
+              <div class="recent-jobs-loading">กำลังดึงข้อมูล...</div>
+            </div>
+          </div>
+
+          <!-- Merge Input Form -->
+          <div class="card card-form">
+            <div class="form-group">
+              <label for="merge-product-id">Product ID ของวิดีโอ</label>
+              <input type="text" id="merge-product-id" placeholder="ใส่รหัสสินค้า หรือ Product ID เช่น 307..." class="text-input">
+            </div>
+
+            <div id="merge-script-container" class="form-group hidden">
+              <label>บทพากย์เพื่อสร้างไฟล์เสียง (Sound Prompt)</label>
+              <div class="prompt-box">
+                <textarea id="merge-sound-prompt" readonly rows="3" class="text-input-readonly" style="resize: none;"></textarea>
+                <button id="btn-copy-merge-prompt" class="btn-secondary-action">คัดลอกบทพากย์</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>อัปโหลดไฟล์เสียงพากย์ (.mp3 หรือ .wav)</label>
+              <div id="audio-dropzone" class="dropzone-audio">
+                <input type="file" id="audio-input" accept="audio/mp3, audio/mpeg, audio/wav, audio/x-wav, audio/wave, .mp3, .wav" class="file-input">
+                <div class="dropzone-content">
+                  <svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                  <p class="main-text">ลากและวางไฟล์เสียงพากย์ที่นี่</p>
+                  <p class="sub-text">หรือคลิกเพื่อเลือกไฟล์เสียง (.mp3 หรือ .wav)</p>
+                </div>
+                <div id="audio-preview-container" class="preview-container hidden">
+                  <div class="audio-info">
+                    <span class="file-name" id="audio-file-name">sound_voice.mp3</span>
+                    <span class="file-size" id="audio-file-size">0.0 MB</span>
+                  </div>
+                  <button id="btn-remove-audio" class="btn-remove">&times;</button>
+                </div>
+              </div>
+            </div>
+
+            <button id="btn-merge" class="btn-primary" disabled>
+              <span>เริ่มรวมเสียงพากย์ (Run Workflow 2)</span>
+            </button>
+          </div>
+
+          <!-- Merge Status Area -->
+          <div class="card card-status">
+            <div id="merge-idle-placeholder" class="status-placeholder">
+              <svg viewBox="0 0 24 24" width="64" height="64" stroke="currentColor" stroke-width="1" fill="none" class="floating-icon"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+              <h3>พร้อมทำงาน</h3>
+              <p>กรุณาเลือกงานจากตารางซ้ายมือ หรือป้อน Product ID และอัปโหลดไฟล์เสียง แล้วกดปุ่มเพื่อเริ่มรวมไฟล์</p>
+            </div>
+
+            <div id="merge-status-container" class="status-active-container hidden">
+              <h3 class="status-title">สถานะความคืบหน้า</h3>
+              
+              <div class="stepper">
+                <div class="step" id="step-m-1">
+                  <div class="step-circle">1</div>
+                  <div class="step-label">อัปโหลดเสียงพากย์เข้าระบบ</div>
+                </div>
+                <div class="step" id="step-m-2">
+                  <div class="step-circle">2</div>
+                  <div class="step-label">กำลังค้นหาวิดีโอต้นแบบ</div>
+                </div>
+                <div class="step" id="step-m-3">
+                  <div class="step-circle">3</div>
+                  <div class="step-label">กำลังประมวลผลรวมไฟล์ (FFmpeg)</div>
+                </div>
+              </div>
+              
+              <button id="btn-cancel-merge" class="btn-cancel">
+                <span>ยกเลิกและรีเซ็ตสถานะ</span>
+              </button>
+
+              <div id="merge-results" class="results-panel hidden">
+                <hr class="divider">
+                <div class="success-message">
+                  <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                  <span>รวมไฟล์เสียงเข้ากับวิดีโอเรียบร้อยสมบูรณ์แล้ว!</span>
+                </div>
+                <div class="results-actions">
+                  <button id="btn-download-video" class="btn-success">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    ดาวน์โหลดวิดีโอตัวเต็ม
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: HISTORY DATABASE -->
+      <section id="tab-history" class="tab-pane">
+        <div class="pane-header-history">
+          <div>
+            <h2>คลังประวัติงานทั้งหมด (Database Library)</h2>
+            <p class="pane-subtitle">ประวัติข้อมูลวิดีโอ ผลลัพธ์การทำงาน และลิงก์ดาวน์โหลดทั้งหมดในฐานข้อมูลของ n8n</p>
+          </div>
+          <button id="btn-refresh-history" class="btn-refresh-full">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+            ดึงข้อมูลใหม่
+          </button>
+        </div>
+
+        <div class="card card-table">
+          <div class="table-filters">
+            <input type="text" id="history-search" placeholder="ค้นหาตามเลข ID หรือรายละเอียดสินค้า..." class="table-search-input">
+            <select id="history-filter-status" class="table-filter-select">
+              <option value="all">แสดงสถานะทั้งหมด</option>
+              <option value="done">ทำวิดีโอดิบสำเร็จ (Done)</option>
+              <option value="fail">ล้มเหลว (Fail)</option>
+              <option value="pending">กำลังดำเนินการ (Pending)</option>
+              <option value="unmerged">รอรวมเสียง (Unmerged)</option>
+              <option value="merged">รวมเสียงแล้ว (Merged)</option>
+            </select>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px;">ID</th>
+                  <th style="width: 80px;">รูปพรีวิว</th>
+                  <th>รายละเอียดสินค้า</th>
+                  <th>บทพากย์ (Sound Prompt)</th>
+                  <th style="width: 100px;">สถานะคลิปดิบ</th>
+                  <th style="width: 140px;">ลิงก์ผลลัพธ์</th>
+                  <th style="width: 120px;">สร้างเมื่อ</th>
+                  <th style="width: 80px;">ลบ</th>
+                </tr>
+              </thead>
+              <tbody id="history-table-body">
+                <tr>
+                  <td colspan="8" class="table-loading-msg">กำลังดึงข้อมูลประวัติงาน...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: SETTINGS -->
+      <section id="tab-settings" class="tab-pane">
+        <div class="pane-header">
+          <h2>ตั้งค่าการเชื่อมต่อ (n8n Settings)</h2>
+          <p class="pane-subtitle">ป้อน URL และข้อมูลยืนยันตัวตนสำหรับล็อกอินเข้าระบบ n8n ของคุณ</p>
+        </div>
+
+        <div class="card card-settings">
+          <div class="form-group">
+            <label for="setting-n8n-url">n8n Host URL</label>
+            <input type="url" id="setting-n8n-url" placeholder="เช่น http://localhost:5678" class="text-input" value="http://localhost:5678">
+          </div>
+
+          <div class="settings-divider">n8n Authentication (Basic Auth)</div>
+
+          <div class="form-group">
+            <label for="setting-n8n-user">Username (Email)</label>
+            <input type="text" id="setting-n8n-user" placeholder="ใส่ Email ล็อกอินของ n8n" class="text-input">
+          </div>
+
+          <div class="form-group">
+            <label for="setting-n8n-pass">Password</label>
+            <input type="password" id="setting-n8n-pass" placeholder="ใส่รหัสผ่านล็อกอินของ n8n" class="text-input">
+          </div>
+
+          <button id="btn-save-settings" class="btn-primary" style="margin-top: 10px;">
+            <span>บันทึกการตั้งค่า</span>
+          </button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div id="toast-success" class="toast hidden">บันทึกเรียบร้อยแล้ว!</div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-icon-danger">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+        </div>
+        <div>
+          <h3 class="modal-title">ยืนยันการลบข้อมูล</h3>
+          <p class="modal-subtitle" id="modal-item-label">สินค้า ID: -</p>
+        </div>
+      </div>
+
+      <p class="modal-desc">กรุณาเลือกรายการที่ต้องการลบออกจากระบบ ข้อมูลที่ถูกลบแล้วไม่สามารถกู้คืนได้</p>
+
+      <div class="modal-checkboxes">
+        <label class="modal-check-item">
+          <input type="checkbox" id="chk-delete-db" checked>
+          <span class="check-label">
+            <span class="check-title">🗄️ ลบประวัติแถวข้อมูลในเครื่อง (SQLite)</span>
+            <span class="check-sub">ลบรายการนี้ออกจากฐานข้อมูล n8n Datatable ในเครื่อง</span>
+          </span>
+        </label>
+        <label class="modal-check-item">
+          <input type="checkbox" id="chk-delete-image" checked>
+          <span class="check-label">
+            <span class="check-title">🖼️ ลบรูปภาพสินค้าดิบใน Supabase Storage</span>
+            <span class="check-sub">ลบภาพสินค้าจากโฟลเดอร์ tiktok/ บน Supabase</span>
+          </span>
+        </label>
+        <label class="modal-check-item">
+          <input type="checkbox" id="chk-delete-audio" checked>
+          <span class="check-label">
+            <span class="check-title">🎙️ ลบไฟล์เสียงพากย์ใน Supabase Storage</span>
+            <span class="check-sub">ลบไฟล์เสียงพากย์จากโฟลเดอร์ sounds/ บน Supabase</span>
+          </span>
+        </label>
+        <label class="modal-check-item">
+          <input type="checkbox" id="chk-delete-gdrive" checked>
+          <span class="check-label">
+            <span class="check-title">☁️ ลบวิดีโอสำเร็จรูปใน Google Drive</span>
+            <span class="check-sub">ลบคลิปวิดีโอตัวเต็มที่อัปโหลดไว้ใน Google Drive</span>
+          </span>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button id="modal-cancel-btn" class="btn-modal-cancel">ยกเลิก</button>
+        <button id="modal-confirm-btn" class="btn-modal-danger">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+          ยืนยัน ลบข้อมูล
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TikTok Prep Modal -->
+  <div id="tiktok-modal" class="modal-overlay hidden">
+    <div class="modal-box" style="max-width: 600px;">
+      <div class="modal-header">
+        <div class="modal-icon-tiktok" style="background: #25F4EE; color: #000; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px;">
+          🎵
+        </div>
+        <div class="modal-title-group">
+          <h3 class="modal-title">เตรียมโพสต์ลง TikTok</h3>
+          <p class="modal-subtitle">ดาวน์โหลดคลิป คัดลอกแคปชั่น และบันทึกรหัสตะกร้าสินค้า</p>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 200px;">
+            <video id="tiktok-video-preview" controls style="width: 100%; border-radius: 8px; background: #000; max-height: 350px;"></video>
+            <div style="margin-top: 10px; display: flex; gap: 10px;">
+              <button id="btn-tiktok-download" class="btn-secondary" style="flex: 1;">📥 ดาวน์โหลดวิดีโอ</button>
+            </div>
+          </div>
+          <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 10px;">
+            <div class="form-group">
+              <label>รายละเอียดสินค้า (สำหรับค้นหาเพื่อผูกตะกร้า)</label>
+              <textarea id="tiktok-desc" class="text-input text-input-readonly" rows="3" readonly placeholder="รายละเอียดสินค้า..."></textarea>
+              <button id="btn-tiktok-copy-desc" class="btn-secondary" style="margin-top: 5px; width: 100%; font-size: 12px; padding: 5px;">📋 คัดลอกรายละเอียดสินค้า</button>
+            </div>
+            <div class="form-group">
+              <label>ข้อความโพสต์ (Caption & Hashtags)</label>
+              <textarea id="tiktok-caption" class="text-input" rows="5" placeholder="พิมพ์แคปชั่นและแฮชแท็กที่นี่..."></textarea>
+              <button id="btn-tiktok-copy-caption" class="btn-secondary" style="margin-top: 5px; width: 100%; font-size: 12px; padding: 5px;">📋 คัดลอกแคปชั่น</button>
+            </div>
+            <div class="form-group">
+              <label>รหัสสินค้าตะกร้า TikTok (Product ID / Link)</label>
+              <input type="text" id="tiktok-link" class="text-input" placeholder="ใส่รหัสหรือลิงก์ตะกร้าสินค้า...">
+            </div>
+            <div class="form-group">
+              <label>สถานะการโพสต์ (Status)</label>
+              <select id="tiktok-status" class="text-input">
+                <option value="pending">รอการโพสต์ (Pending)</option>
+                <option value="posted">โพสต์ลง TikTok เรียบร้อย (Posted)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-cancel-tiktok" class="btn-secondary">ยกเลิก</button>
+        <button id="btn-save-tiktok" class="btn-primary" style="background: #FE2C55; color: white;">บันทึกสถานะ TikTok</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Auto-init n8n connection settings (force set every load)
+    localStorage.setItem('n8nUrl', 'http://localhost:5678');
+    localStorage.setItem('n8nUser', 'noppasit99@gmail.com');
+    localStorage.setItem('n8nPass', 'Onemore123');
+
+    // Failsafe tab switcher (works even if app.js has errors)
+    function switchTab(tabId) {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      var btn = document.querySelector('[data-tab="' + tabId + '"]');
+      var pane = document.getElementById(tabId);
+      if (btn) btn.classList.add('active');
+      if (pane) pane.classList.add('active');
+      if (tabId === 'tab-history' && typeof fetchHistoryData === 'function') fetchHistoryData();
+      if (tabId === 'tab-merge' && typeof fetchRecentJobs === 'function') fetchRecentJobs();
+      if (tabId === 'tab-settings') {
+        var urlEl = document.getElementById('setting-n8n-url');
+        var userEl = document.getElementById('setting-n8n-user');
+        var passEl = document.getElementById('setting-n8n-pass');
+        if (urlEl) urlEl.value = localStorage.getItem('n8nUrl') || 'http://localhost:5678';
+        if (userEl) userEl.value = localStorage.getItem('n8nUser') || '';
+        if (passEl) passEl.value = localStorage.getItem('n8nPass') || '';
+      }
+    }
+  </script>
+
+  <script src="app.js?v=12"></script>
+</body>
+</html>
