@@ -1339,6 +1339,22 @@ function applyHistoryFilters() {
       statusBadge = '<span class="badge fail">Fail</span>';
     }
 
+    // TikTok Status Badge
+    let tiktokBadge = '';
+    if (row.tiktok_link && row.tiktok_link.startsWith('http')) {
+      // โพสต์แล้ว มีลิงค์
+      tiktokBadge = `<a href="${row.tiktok_link}" target="_blank" class="badge tiktok-posted" title="ดูวิดีโอ TikTok">🎵 TikTok ✅</a>`;
+    } else if (row.tiktok_status === 'posted') {
+      // โพสต์แล้ว ไม่มีลิงค์
+      tiktokBadge = '<span class="badge tiktok-posted">🎵 โพสต์แล้ว</span>';
+    } else if (row.tiktok_status && row.tiktok_status !== 'pending' && row.tiktok_status !== '') {
+      // สถานะอื่น ๆ
+      tiktokBadge = `<span class="badge tiktok-other">🎵 ${row.tiktok_status}</span>`;
+    } else if (row.tiktok_status === 'pending') {
+      // รอโพสต์
+      tiktokBadge = '<span class="badge tiktok-pending">🎵 รอโพสต์</span>';
+    }
+
     // Date
     let displayDate = '';
     if (row.createdAt) {
@@ -1377,7 +1393,10 @@ function applyHistoryFilters() {
       <td><img src="${thumbUrl}" class="history-thumb" onerror="this.src='https://rgstbcbyrofqniswyemi.supabase.co/storage/v1/object/public/n8n/tiktok/2026-05-26T05:50:53.768Z.jpg'"></td>
       <td class="history-desc-cell" title="${desc}">${desc}</td>
       <td class="history-prompt-cell" title="${soundPrompt}">${soundPrompt}</td>
-      <td>${statusBadge}</td>
+      <td>
+        ${statusBadge}
+        ${tiktokBadge ? `<div style="margin-top:5px">${tiktokBadge}</div>` : ''}
+      </td>
       <td><div class="table-actions">${actionButtons}</div></td>
       <td class="history-date">${displayDate}</td>
       <td>

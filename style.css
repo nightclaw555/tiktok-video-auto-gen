@@ -1127,6 +1127,49 @@ select.text-input option {
   border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
+/* TikTok Status Badges */
+.badge.tiktok-posted {
+  background: rgba(37, 244, 238, 0.12);
+  color: #25F4EE;
+  border: 1px solid rgba(37, 244, 238, 0.35);
+  box-shadow: 0 0 8px rgba(37, 244, 238, 0.15);
+  text-transform: none;
+  text-decoration: none;
+  cursor: default;
+}
+
+a.badge.tiktok-posted {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+a.badge.tiktok-posted:hover {
+  background: rgba(37, 244, 238, 0.22);
+  box-shadow: 0 0 14px rgba(37, 244, 238, 0.35);
+  color: #fff;
+}
+
+.badge.tiktok-pending {
+  background: rgba(254, 44, 85, 0.1);
+  color: #FE2C55;
+  border: 1px solid rgba(254, 44, 85, 0.25);
+  text-transform: none;
+  animation: tiktok-pulse 2s ease-in-out infinite;
+}
+
+.badge.tiktok-other {
+  background: rgba(167, 139, 250, 0.1);
+  color: #a78bfa;
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  text-transform: none;
+}
+
+@keyframes tiktok-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+
 /* Result action buttons in history table */
 .table-actions {
   display: flex;
