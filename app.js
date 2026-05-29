@@ -1340,19 +1340,27 @@ function applyHistoryFilters() {
     }
 
     // TikTok Status Badge
+    // รองรับทั้ง URL เต็ม (https://...) และ TikTok Video ID (ตัวเลข เช่น 1730381947784366611)
     let tiktokBadge = '';
-    if (row.tiktok_link && row.tiktok_link.startsWith('http')) {
-      // โพสต์แล้ว มีลิงค์
-      tiktokBadge = `<a href="${row.tiktok_link}" target="_blank" class="badge tiktok-posted" title="ดูวิดีโอ TikTok">🎵 TikTok ✅</a>`;
+    const rawLink = String(row.tiktok_link || '').trim();
+    const isFullUrl = rawLink.startsWith('http');
+    const isNumericId = /^\d{10,}$/.test(rawLink); // TikTok video ID = ตัวเลข 10+ หลัก
+    const tiktokUrl = isFullUrl ? rawLink
+                    : isNumericId ? `https://www.tiktok.com/video/${rawLink}`
+                    : null;
+
+    if (tiktokUrl) {
+      // มีลิงค์ (URL หรือ Video ID) — กดเข้าดูได้
+      tiktokBadge = `<a href="${tiktokUrl}" target="_blank" class="badge tiktok-posted" title="ดูวิดีโอ TikTok (ID: ${rawLink})">🎵 TikTok ✅</a>`;
     } else if (row.tiktok_status === 'posted') {
-      // โพสต์แล้ว ไม่มีลิงค์
+      // โพสต์แล้ว แต่ไม่มีลิงค์/ID
       tiktokBadge = '<span class="badge tiktok-posted">🎵 โพสต์แล้ว</span>';
-    } else if (row.tiktok_status && row.tiktok_status !== 'pending' && row.tiktok_status !== '') {
-      // สถานะอื่น ๆ
-      tiktokBadge = `<span class="badge tiktok-other">🎵 ${row.tiktok_status}</span>`;
     } else if (row.tiktok_status === 'pending') {
       // รอโพสต์
       tiktokBadge = '<span class="badge tiktok-pending">🎵 รอโพสต์</span>';
+    } else if (row.tiktok_status && row.tiktok_status !== '') {
+      // สถานะอื่น ๆ
+      tiktokBadge = `<span class="badge tiktok-other">🎵 ${row.tiktok_status}</span>`;
     }
 
     // Date
