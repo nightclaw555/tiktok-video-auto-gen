@@ -1394,9 +1394,17 @@ function applyHistoryFilters() {
 
     if (row.final_video && row.final_video !== 'wait' && row.final_video.startsWith('http')) {
         actionButtons += `<a href="${row.final_video}" target="_blank" class="btn-table-action btn-table-action-success" style="margin-top: 6px;">ดาวน์โหลดวิดีโอเต็ม</a>`;
-        actionButtons += `<button class="btn-table-action" style="margin-top: 6px; border-color: #25F4EE; color: #000; background: #25F4EE;" onclick="openTikTokModal(${row.id}, \`${safeFinalVideo}\`, \`${safeDesc}\`, \`${safeCaption}\`, \`${row.tiktok_link || ''}\`, \`${row.tiktok_status || 'pending'}\`)">🎵 เตรียม TikTok</button>`;
+        const safeTiktokVideoUrl = (row.tiktok_video_url || '').replace(/"/g, '&quot;');
+      actionButtons += `<button class="btn-table-action" style="margin-top: 6px; border-color: #25F4EE; color: #000; background: #25F4EE;" onclick="openTikTokModal(${row.id}, \`${safeFinalVideo}\`, \`${safeDesc}\`, \`${safeCaption}\`, \`${row.tiktok_link || ''}\`, \`${row.tiktok_status || 'pending'}\`, \`${safeTiktokVideoUrl}\`)">🎵 เตรียม TikTok</button>`;
       } else if (row.status === 'done' || row.status === 'success') {
       actionButtons += `<button class="btn-table-action" style="margin-top: 6px; border-color: var(--accent-orange); color: var(--accent-orange);" onclick="recallJobForMerge(${row.id}, \`${soundPrompt.replace(/'/g, "\\'")}\`)">กดรวมเสียงพากย์</button>`;
+    }
+
+    // Video URL badge (แยกจาก product badge)
+    let tiktokVideoBadge = '';
+    const rawVideoUrl = String(row.tiktok_video_url || '').trim();
+    if (rawVideoUrl.startsWith('http')) {
+      tiktokVideoBadge = `<a href="${rawVideoUrl}" target="_blank" class="badge tiktok-other" style="display:inline-flex;margin-top:3px;" title="ดูวิดีโอที่โพสต์">🎬 ดูวิดีโอ</a>`;
     }
 
     tr.innerHTML = `
@@ -1407,6 +1415,7 @@ function applyHistoryFilters() {
       <td>
         ${statusBadge}
         ${tiktokBadge ? `<div style="margin-top:5px">${tiktokBadge}</div>` : ''}
+        ${tiktokVideoBadge ? `<div style="margin-top:3px">${tiktokVideoBadge}</div>` : ''}
       </td>
       <td><div class="table-actions">${actionButtons}</div></td>
       <td class="history-date">${displayDate}</td>
@@ -1553,17 +1562,16 @@ const btnTikTokDownload = document.getElementById('btn-tiktok-download');
 const tiktokVideoPreview = document.getElementById('tiktok-video-preview');
 const tiktokCaption = document.getElementById('tiktok-caption');
 const tiktokLink = document.getElementById('tiktok-link');
+const tiktokVideoUrlInput = document.getElementById('tiktok-video-url');
 const tiktokStatus = document.getElementById('tiktok-status');
 
 let currentTikTokId = null;
 
-function openTikTokModal(id, videoUrl, description, caption, link, status) {
+function openTikTokModal(id, videoUrl, description, caption, link, status, tiktokVideoUrl) {
   currentTikTokId = id;
   
-  // Set Video
+  // Set Video preview
   if (videoUrl && videoUrl.startsWith('http')) {
-    // If it's a Google Drive link, we need to handle it or just use it if it's a direct link
-    // Google Drive direct link format conversion (if it's using uc?id=)
     tiktokVideoPreview.src = videoUrl;
     btnTikTokDownload.onclick = () => window.open(videoUrl, '_blank');
   } else {
@@ -1573,20 +1581,21 @@ function openTikTokModal(id, videoUrl, description, caption, link, status) {
   
   // Set Description
   const tiktokDesc = document.getElementById('tiktok-desc');
-  if (tiktokDesc) {
-    tiktokDesc.value = description || '';
-  }
+  if (tiktokDesc) tiktokDesc.value = description || '';
 
   // Set Caption
   if (caption && caption.trim()) {
     tiktokCaption.value = caption;
   } else {
-    const hashtags = "\n\n#tiktokshop #รีวิวสินค้า #ของดีบอกต่อ";
+    const hashtags = '\n\n#tiktokshop #รีวิวสินค้า #ของดีบอกต่อ';
     tiktokCaption.value = description ? (description + hashtags) : hashtags;
   }
   
-  // Set Link and Status
+  // Set Product ID / Link
   tiktokLink.value = link || '';
+  // Set Video URL (ลิงค์วิดีโอที่โพสต์)
+  if (tiktokVideoUrlInput) tiktokVideoUrlInput.value = tiktokVideoUrl || '';
+  // Set Status
   tiktokStatus.value = status || 'pending';
   
   // Show Modal
@@ -1644,6 +1653,7 @@ if (btnSaveTikTok) {
       const payload = {
         product_id: currentTikTokId,
         tiktok_link: tiktokLink.value.trim(),
+        tiktok_video_url: tiktokVideoUrlInput ? tiktokVideoUrlInput.value.trim() : '',
         tiktok_status: tiktokStatus.value
       };
       
