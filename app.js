@@ -1340,18 +1340,21 @@ function applyHistoryFilters() {
     }
 
     // TikTok Status Badge
-    // รองรับทั้ง URL เต็ม (https://...) และ TikTok Video ID (ตัวเลข เช่น 1730381947784366611)
+    // รองรับทั้ง URL เต็ม (https://...) และ TikTok Shop Product ID (ตัวเลข เช่น 1730381947784366611)
     let tiktokBadge = '';
     const rawLink = String(row.tiktok_link || '').trim();
     const isFullUrl = rawLink.startsWith('http');
-    const isNumericId = /^\d{10,}$/.test(rawLink); // TikTok video ID = ตัวเลข 10+ หลัก
+    const isNumericId = /^\d{10,}$/.test(rawLink); // TikTok product ID = ตัวเลข 10+ หลัก
     const tiktokUrl = isFullUrl ? rawLink
-                    : isNumericId ? `https://www.tiktok.com/video/${rawLink}`
+                    : isNumericId ? `https://www.tiktok.com/product/${rawLink}`  // ← Product link
                     : null;
 
     if (tiktokUrl) {
-      // มีลิงค์ (URL หรือ Video ID) — กดเข้าดูได้
-      tiktokBadge = `<a href="${tiktokUrl}" target="_blank" class="badge tiktok-posted" title="ดูวิดีโอ TikTok (ID: ${rawLink})">🎵 TikTok ✅</a>`;
+      // มีลิงค์ — กดดูสินค้าได้
+      const isProduct = isNumericId || rawLink.includes('/product/');
+      const badgeLabel = isProduct ? '🛒 ดูสินค้า' : '🎵 TikTok ✅';
+      const badgeTitle = isProduct ? `ดูสินค้า TikTok Shop (ID: ${rawLink})` : 'ดูวิดีโอ TikTok';
+      tiktokBadge = `<a href="${tiktokUrl}" target="_blank" class="badge tiktok-posted" title="${badgeTitle}">${badgeLabel}</a>`;
     } else if (row.tiktok_status === 'posted') {
       // โพสต์แล้ว แต่ไม่มีลิงค์/ID
       tiktokBadge = '<span class="badge tiktok-posted">🎵 โพสต์แล้ว</span>';
