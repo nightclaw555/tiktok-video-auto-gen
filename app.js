@@ -1416,7 +1416,7 @@ function applyHistoryFilters() {
 
     tr.innerHTML = `
       <td class="history-pid">${row.id}</td>
-      <td><img src="${thumbUrl}" class="history-thumb" onerror="this.src='https://rgstbcbyrofqniswyemi.supabase.co/storage/v1/object/public/n8n/tiktok/2026-05-26T05:50:53.768Z.jpg'"></td>
+      <td><img src="${thumbUrl}" class="history-thumb" loading="lazy" onerror="this.src='https://rgstbcbyrofqniswyemi.supabase.co/storage/v1/object/public/n8n/tiktok/2026-05-26T05:50:53.768Z.jpg'"></td>
       <td class="history-desc-cell" title="${desc}">${desc}</td>
       <td class="history-prompt-cell" title="${soundPrompt}">${soundPrompt}</td>
       <td>
@@ -1779,7 +1779,7 @@ function renderShowcaseBrowserGrid(products) {
       <div class="showcase-card" onclick="selectProductFromBrowser('${safeId}', '${safeName}')">
         <div class="showcase-card-badge">#${idx + 1}</div>
         <div class="showcase-card-img-wrapper">
-          <img src="${p.image_url || 'icon.png'}" alt="${safeName}" onerror="this.src='icon.png'">
+          <img src="${p.image_url || 'icon.png'}" alt="${safeName}" loading="lazy" onerror="this.src='icon.png'">
         </div>
         <div class="showcase-card-details">
           <div class="showcase-card-name" title="${safeName}">${p.name || 'ไม่มีชื่อสินค้า'}</div>

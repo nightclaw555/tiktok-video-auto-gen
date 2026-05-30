@@ -7,3 +7,8 @@ n8n_out.log
 # Windows thumbnail cache
 Thumbs.db
 desktop.ini
+
+# Database files
+database.sqlite
+*.sqlite
+*.db
