@@ -1288,8 +1288,27 @@ a.badge.tiktok-posted:hover {
   padding: 32px;
   width: 480px;
   max-width: calc(100vw - 40px);
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 0 60px rgba(239, 68, 68, 0.1), 0 20px 60px rgba(0,0,0,0.6);
   animation: slideUp 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+.modal-box::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-box::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-box::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+
+.modal-box::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 @keyframes slideUp {
