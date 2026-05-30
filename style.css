@@ -1536,3 +1536,88 @@ a.badge.tiktok-posted:hover {
   transform: translateY(-2px);
   box-shadow: 0 0 15px rgba(254, 44, 85, 0.4);
 }
+
+/* Showcase Card Grid Browser Styles */
+.showcase-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  text-align: left;
+  position: relative;
+}
+
+.showcase-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 4px 15px rgba(0, 242, 254, 0.15);
+  transform: translateY(-2px);
+}
+
+.showcase-card-img-wrapper {
+  aspect-ratio: 1;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+}
+
+.showcase-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.showcase-card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-grow: 1;
+}
+
+.showcase-card-name {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.4;
+  height: 2.8em; /* 2 lines */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.showcase-card-id {
+  font-family: monospace;
+  font-size: 0.7rem;
+  color: var(--accent-cyan);
+  font-weight: 600;
+  background: rgba(0, 242, 254, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.showcase-card-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: rgba(0, 0, 0, 0.75);
+  color: var(--text-primary);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 10;
+}

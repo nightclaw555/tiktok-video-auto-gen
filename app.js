@@ -53,6 +53,7 @@ const connectionText = document.getElementById('connection-text');
 const settingN8nUrl = document.getElementById('setting-n8n-url');
 const settingN8nUser = document.getElementById('setting-n8n-user');
 const settingN8nPass = document.getElementById('setting-n8n-pass');
+const settingTiktokUsername = document.getElementById('setting-tiktok-username');
 const btnSaveSettings = document.getElementById('btn-save-settings');
 
 // Tab 1 (Generate)
@@ -169,6 +170,9 @@ function loadConfigSettings() {
   settingN8nUrl.value = localStorage.getItem('n8nUrl') || 'http://localhost:5678';
   settingN8nUser.value = localStorage.getItem('n8nUser') || '';
   settingN8nPass.value = localStorage.getItem('n8nPass') || '';
+  if (settingTiktokUsername) {
+    settingTiktokUsername.value = localStorage.getItem('tiktokUsername') || '';
+  }
 }
 
 // Save connection settings
@@ -176,7 +180,10 @@ btnSaveSettings.addEventListener('click', () => {
   localStorage.setItem('n8nUrl', settingN8nUrl.value.trim());
   localStorage.setItem('n8nUser', settingN8nUser.value.trim());
   localStorage.setItem('n8nPass', settingN8nPass.value.trim());
-  showToast('บันทึกการตั้งค่าการเชื่อมต่อเรียบร้อยแล้ว!');
+  if (settingTiktokUsername) {
+    localStorage.setItem('tiktokUsername', settingTiktokUsername.value.trim());
+  }
+  showToast('บันทึกการตั้งค่าเรียบร้อยแล้ว!');
   testConnection();
 });
 
@@ -1694,6 +1701,13 @@ if (btnSaveTikTok) {
   });
 }
 
+window.showcaseProducts = [];
+
+// Resolve API Host based on window location to support GitHub Pages
+const showcaseApiHost = (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1'))
+  ? ''
+  : 'http://localhost:8081';
+
 // Load showcase products from local API
 async function loadShowcaseProducts(selectedProductId = '') {
   const select = document.getElementById('tiktok-showcase-select');
@@ -1702,38 +1716,239 @@ async function loadShowcaseProducts(selectedProductId = '') {
   select.innerHTML = '<option value="">-- กำลังโหลดสินค้าโชว์เคส... --</option>';
 
   try {
-    const response = await fetch('/api/get-showcase');
+    const response = await fetch(`${showcaseApiHost}/api/get-showcase`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     
-    const products = await response.json();
-    let html = '<option value="">-- เลือกจากสินค้าโชว์เคสที่ดูดเข้าระบบไว้ --</option>';
-    
-    if (Array.isArray(products)) {
+    window.showcaseProducts = await response.json();
+    if (Array.isArray(window.showcaseProducts)) {
       // Sort alphabetically by name
-      products.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-      products.forEach(p => {
-        const isSelected = String(p.product_id) === String(selectedProductId) ? 'selected' : '';
-        html += `<option value="${p.product_id}" ${isSelected}>🛍️ ${p.name} (${p.product_id})</option>`;
-      });
+      window.showcaseProducts.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } else {
+      window.showcaseProducts = [];
     }
     
-    select.innerHTML = html;
+    renderShowcaseDropdown(window.showcaseProducts, selectedProductId);
+    updateSelectedProductBanner(selectedProductId);
   } catch (err) {
     console.error('Failed to load showcase products:', err);
     select.innerHTML = '<option value="">❌ โหลดสินค้าโชว์เคสไม่สำเร็จ (ยังไม่เคยดูดสินค้าเข้าระบบ)</option>';
   }
 }
 
-// Bind showcase select change event
+function renderShowcaseDropdown(products, selectedProductId = '') {
+  const select = document.getElementById('tiktok-showcase-select');
+  if (!select) return;
+  
+  let html = '<option value="">-- เลือกจากสินค้าโชว์เคสที่ดูดเข้าระบบไว้ --</option>';
+  products.forEach(p => {
+    const isSelected = String(p.product_id) === String(selectedProductId) ? 'selected' : '';
+    const stockVal = p.stock || 0;
+    const stockStr = Number(stockVal).toLocaleString();
+    html += `<option value="${p.product_id}" ${isSelected}>🛍️ [สต็อก: ${stockStr}] ${p.name} (${p.price || '฿0'})</option>`;
+  });
+  select.innerHTML = html;
+}
+
+// Render product cards inside the grid browser modal
+function renderShowcaseBrowserGrid(products) {
+  const grid = document.getElementById('modal-showcase-grid');
+  const subtitle = document.getElementById('showcase-browser-subtitle');
+  if (!grid) return;
+  
+  if (subtitle) {
+    subtitle.innerText = `พบทั้งหมด ${products.length} รายการ`;
+  }
+  
+  if (products.length === 0) {
+    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-secondary);">❌ ไม่พบสินค้าที่ตรงตามเงื่อนไขค้นหา</div>';
+    return;
+  }
+  
+  let html = '';
+  products.forEach((p, idx) => {
+    const safeName = (p.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    const safeId = (p.product_id || '').replace(/'/g, "\\'");
+    
+    const stockVal = p.stock || 0;
+    const stockStr = Number(stockVal).toLocaleString();
+    const isLowStock = stockVal < 100;
+    const stockColor = isLowStock ? '#ef4444' : '#10b981'; // red or green
+    const stockGlow = isLowStock ? '0 0 5px rgba(239,68,68,0.5)' : 'none';
+    
+    html += `
+      <div class="showcase-card" onclick="selectProductFromBrowser('${safeId}', '${safeName}')">
+        <div class="showcase-card-badge">#${idx + 1}</div>
+        <div class="showcase-card-img-wrapper">
+          <img src="${p.image_url || 'icon.png'}" alt="${safeName}" onerror="this.src='icon.png'">
+        </div>
+        <div class="showcase-card-details">
+          <div class="showcase-card-name" title="${safeName}">${p.name || 'ไม่มีชื่อสินค้า'}</div>
+          <div class="showcase-card-id">${p.product_id}</div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-top: 4px; font-weight: bold;">
+            <span style="color: ${stockColor}; text-shadow: ${stockGlow};">📦 สต็อก: ${stockStr}</span>
+            <span style="color: #f59e0b;">💰 ${p.price || '฿0'}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  grid.innerHTML = html;
+}
+
+// Helper to update stock/price info banner for selected product
+function updateSelectedProductBanner(productId) {
+  const infoDiv = document.getElementById('selected-product-info');
+  const stockSpan = document.getElementById('selected-product-stock');
+  const priceSpan = document.getElementById('selected-product-price');
+  
+  if (!infoDiv) return;
+  
+  if (!productId) {
+    infoDiv.style.display = 'none';
+    return;
+  }
+  
+  const product = window.showcaseProducts && window.showcaseProducts.find(p => String(p.product_id) === String(productId));
+  if (product) {
+    const stockVal = product.stock || 0;
+    const stockStr = Number(stockVal).toLocaleString();
+    const isLowStock = stockVal < 100;
+    
+    if (stockSpan) {
+      stockSpan.innerText = `📦 สต็อก: ${stockStr}`;
+      stockSpan.style.color = isLowStock ? '#ef4444' : '#10b981';
+      stockSpan.style.textShadow = isLowStock ? '0 0 5px rgba(239,68,68,0.5)' : 'none';
+    }
+    
+    if (priceSpan) {
+      priceSpan.innerText = `💰 ราคา: ${product.price || '฿0'}`;
+    }
+    
+    infoDiv.style.display = 'block';
+    
+    // Auto generate and fill in ad link if the input is currently empty or contains default template
+    const videoUrlInput = document.getElementById('tiktok-video-url');
+    if (videoUrlInput && (!videoUrlInput.value.trim() || videoUrlInput.value.includes('/product/'))) {
+      const username = localStorage.getItem('tiktokUsername') || '';
+      if (username) {
+        const formattedUsername = username.startsWith('@') ? username : `@${username}`;
+        videoUrlInput.value = `https://www.tiktok.com/${formattedUsername}/product/${productId}`;
+      }
+    }
+  } else {
+    infoDiv.style.display = 'none';
+  }
+}
+
+// Handler for selecting product from modal grid
+window.selectProductFromBrowser = function(productId, productName) {
+  const input = document.getElementById('tiktok-link');
+  const select = document.getElementById('tiktok-showcase-select');
+  const desc = document.getElementById('tiktok-desc');
+  
+  if (input) input.value = productId;
+  if (desc) desc.value = productName;
+  
+  if (select) {
+    // Add to select if not present, and select it
+    let exists = false;
+    for (let i = 0; i < select.options.length; i++) {
+      if (select.options[i].value === productId) {
+        select.selectedIndex = i;
+        exists = true;
+        break;
+      }
+    }
+    if (!exists) {
+      // Find product in local list to get its price and stock count for the option text
+      const product = window.showcaseProducts && window.showcaseProducts.find(p => String(p.product_id) === String(productId));
+      const stockVal = product ? (product.stock || 0) : 0;
+      const priceVal = product ? (product.price || '฿0') : '฿0';
+      const stockStr = Number(stockVal).toLocaleString();
+      
+      const opt = document.createElement('option');
+      opt.value = productId;
+      opt.text = `🛍️ [สต็อก: ${stockStr}] ${productName} (${priceVal})`;
+      opt.selected = true;
+      select.appendChild(opt);
+    }
+  }
+  
+  // Update banner info
+  updateSelectedProductBanner(productId);
+  
+  // Close the browser modal
+  const browserModal = document.getElementById('showcase-browser-modal');
+  if (browserModal) browserModal.classList.add('hidden');
+};
+
+// Bind showcase select and browser events
 document.addEventListener('DOMContentLoaded', () => {
   const select = document.getElementById('tiktok-showcase-select');
   const input = document.getElementById('tiktok-link');
+  const searchInput = document.getElementById('tiktok-showcase-search');
+  const btnOpenBrowser = document.getElementById('btn-open-showcase-browser');
+  const btnCloseBrowser = document.getElementById('btn-close-showcase-browser');
+  const browserModal = document.getElementById('showcase-browser-modal');
+  const modalSearch = document.getElementById('modal-showcase-search');
+  
+  // 1. Select dropdown change listener -> populate Link and Description
   if (select && input) {
     select.addEventListener('change', () => {
       const val = select.value;
       if (val) {
         input.value = val;
+        // Auto fill product description with the actual product name
+        const product = window.showcaseProducts && window.showcaseProducts.find(p => String(p.product_id) === String(val));
+        if (product) {
+          const desc = document.getElementById('tiktok-desc');
+          if (desc) desc.value = product.name || '';
+        }
+      } else {
+        input.value = '';
       }
+      // Update price/stock banner
+      updateSelectedProductBanner(val);
+    });
+  }
+  
+  // 2. Dropdown search input listener -> filter options
+  if (searchInput && select) {
+    searchInput.addEventListener('input', () => {
+      const text = searchInput.value.toLowerCase().trim();
+      const filtered = window.showcaseProducts.filter(p => 
+        (p.name || '').toLowerCase().includes(text) || 
+        (p.product_id || '').toLowerCase().includes(text)
+      );
+      renderShowcaseDropdown(filtered, select.value);
+    });
+  }
+  
+  // 3. Open Showcase Grid Browser Modal
+  if (btnOpenBrowser && browserModal) {
+    btnOpenBrowser.addEventListener('click', () => {
+      if (modalSearch) modalSearch.value = '';
+      renderShowcaseBrowserGrid(window.showcaseProducts);
+      browserModal.classList.remove('hidden');
+    });
+  }
+  
+  // 4. Close Showcase Grid Browser Modal
+  if (btnCloseBrowser && browserModal) {
+    btnCloseBrowser.addEventListener('click', () => {
+      browserModal.classList.add('hidden');
+    });
+  }
+  
+  // 5. Modal grid search input listener -> filter grid cards
+  if (modalSearch) {
+    modalSearch.addEventListener('input', () => {
+      const text = modalSearch.value.toLowerCase().trim();
+      const filtered = window.showcaseProducts.filter(p => 
+        (p.name || '').toLowerCase().includes(text) || 
+        (p.product_id || '').toLowerCase().includes(text)
+      );
+      renderShowcaseBrowserGrid(filtered);
     });
   }
 });

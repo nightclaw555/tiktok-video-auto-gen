@@ -4,10 +4,12 @@ import json
 import sqlite3
 import os
 import urllib.parse
+import socket
 
-PORT = 8080
+PORT = 8081
 DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = r"C:\Users\Administrator\.n8n\database.sqlite"
+
 
 class CustomHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -35,22 +37,26 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             try:
                 conn = sqlite3.connect(DB_PATH)
                 cursor = conn.cursor()
-                # Ensure custom showcase table exists
+                # Ensure custom showcase table exists with price and stock
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS tiktok_showcase_products (
                         product_id TEXT PRIMARY KEY,
                         name TEXT,
                         image_url TEXT,
+                        price TEXT,
+                        stock INTEGER,
                         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                     );
                 """)
-                cursor.execute("SELECT product_id, name, image_url FROM tiktok_showcase_products ORDER BY name ASC;")
+                cursor.execute("SELECT product_id, name, image_url, price, stock FROM tiktok_showcase_products ORDER BY name ASC;")
                 rows = cursor.fetchall()
                 for row in rows:
                     products.append({
                         "product_id": row[0],
                         "name": row[1],
-                        "image_url": row[2]
+                        "image_url": row[2],
+                        "price": row[3],
+                        "stock": row[4]
                     })
                 conn.close()
             except Exception as e:
@@ -78,15 +84,17 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
                         product_id TEXT PRIMARY KEY,
                         name TEXT,
                         image_url TEXT,
+                        price TEXT,
+                        stock INTEGER,
                         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                     );
                 """)
                 
                 for p in products:
                     cursor.execute("""
-                        INSERT OR REPLACE INTO tiktok_showcase_products (product_id, name, image_url, updated_at)
-                        VALUES (?, ?, ?, CURRENT_TIMESTAMP);
-                    """, (p['product_id'], p['name'], p['image_url']))
+                        INSERT OR REPLACE INTO tiktok_showcase_products (product_id, name, image_url, price, stock, updated_at)
+                        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP);
+                    """, (p['product_id'], p['name'], p['image_url'], p.get('price', ''), p.get('stock', 0)))
                 
                 conn.commit()
                 conn.close()
@@ -107,11 +115,20 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response(404)
             self.end_headers()
 
+class DualStackTCPServer(socketserver.TCPServer):
+    address_family = socket.AF_INET6
+    def server_bind(self):
+        try:
+            self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+        except Exception:
+            pass
+        super().server_bind()
+
 if __name__ == '__main__':
     # Change working directory to ensure correct static file serving path
     os.chdir(DIRECTORY)
     # Allow port reuse to avoid 'Address already in use' during rapid restarts
-    socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("", PORT), CustomHandler) as httpd:
+    DualStackTCPServer.allow_reuse_address = True
+    with DualStackTCPServer(("", PORT), CustomHandler) as httpd:
         print(f"Serving HTTP with API endpoints on port {PORT}...")
         httpd.serve_forever()

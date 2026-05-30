@@ -410,8 +410,8 @@
       <!-- TAB 4: SETTINGS -->
       <section id="tab-settings" class="tab-pane">
         <div class="pane-header">
-          <h2>ตั้งค่าการเชื่อมต่อ (n8n Settings)</h2>
-          <p class="pane-subtitle">ป้อน URL และข้อมูลยืนยันตัวตนสำหรับล็อกอินเข้าระบบ n8n ของคุณ</p>
+          <h2>ตั้งค่าระบบ (Settings)</h2>
+          <p class="pane-subtitle">ป้อน URL, ข้อมูลยืนยันตัวตน n8n และชื่อช่อง TikTok เพื่อใช้ลิงค์อัตโนมัติ</p>
         </div>
 
         <div class="card card-settings">
@@ -430,6 +430,12 @@
           <div class="form-group">
             <label for="setting-n8n-pass">Password</label>
             <input type="password" id="setting-n8n-pass" placeholder="ใส่รหัสผ่านล็อกอินของ n8n" class="text-input">
+          </div>
+
+          <div class="settings-divider">TikTok Profile Settings</div>
+          <div class="form-group">
+            <label for="setting-tiktok-username">ชื่อช่อง TikTok (เช่น @noppasit99)</label>
+            <input type="text" id="setting-tiktok-username" placeholder="พิมพ์ชื่อช่องมี @ ด้วย เช่น @noppasit99" class="text-input">
           </div>
 
           <button id="btn-save-settings" class="btn-primary" style="margin-top: 10px;">
@@ -533,10 +539,21 @@
             <div class="form-group">
               <label>รหัสสินค้าตะกร้า TikTok (Product ID / Link)</label>
               <div style="display: flex; flex-direction: column; gap: 6px;">
-                <select id="tiktok-showcase-select" class="text-input" style="font-size: 13px; font-weight: 500;">
-                  <option value="">-- เลือกจากสินค้าโชว์เคสที่ดูดเข้าระบบไว้ --</option>
-                </select>
+                <input type="text" id="tiktok-showcase-search" class="text-input" placeholder="🔍 พิมพ์เพื่อค้นหาสินค้าโชว์เคส...">
+                <div style="display: flex; gap: 8px;">
+                  <select id="tiktok-showcase-select" class="text-input" style="font-size: 13px; font-weight: 500; flex: 1;">
+                    <option value="">-- เลือกจากสินค้าโชว์เคสที่ดูดเข้าระบบไว้ --</option>
+                  </select>
+                  <button id="btn-open-showcase-browser" class="btn-primary" style="width: auto; padding: 0 16px; margin: 0; background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%); box-shadow: none; flex-shrink: 0;" type="button">
+                    🖼️ ค้นหาแบบดูรูป
+                  </button>
+                </div>
                 <input type="text" id="tiktok-link" class="text-input" placeholder="ใส่รหัสสินค้า เช่น 1730381947784366611">
+                <!-- Info Banner for Stock and Price -->
+                <div id="selected-product-info" style="display: none; padding: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; font-size: 0.8rem; font-weight: bold; margin-top: 4px;">
+                  <span style="color: #10b981;" id="selected-product-stock">📦 สต็อก: 0</span>
+                  <span style="color: #f59e0b; margin-left: 15px;" id="selected-product-price">💰 ราคา: ฿0</span>
+                </div>
               </div>
             </div>
             <div class="form-group">
@@ -558,6 +575,32 @@
       <div class="modal-footer">
         <button id="btn-cancel-tiktok" class="btn-secondary">ยกเลิก</button>
         <button id="btn-save-tiktok" class="btn-primary" style="background: #FE2C55; color: white;">บันทึกสถานะ TikTok</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Showcase Browser Modal -->
+  <div id="showcase-browser-modal" class="modal-overlay hidden" style="z-index: 10000; display: flex; align-items: center; justify-content: center;">
+    <div class="modal-box" style="max-width: 900px; width: 90%; height: 80vh; display: flex; flex-direction: column; padding: 24px; border-color: rgba(0, 242, 254, 0.25);">
+      <div class="modal-header" style="padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 24px;">🛍️</span>
+          <div>
+            <h3 class="modal-title" style="margin: 0; font-size: 18px; font-weight: 700;">ค้นหาและเลือกสินค้าโชว์เคส</h3>
+            <p class="modal-subtitle" style="margin: 0; font-size: 13px; color: var(--accent-cyan);" id="showcase-browser-subtitle">มีทั้งหมด 0 รายการ</p>
+          </div>
+        </div>
+        <button id="btn-close-showcase-browser" class="btn-remove" style="position: static; font-size: 24px; padding: 4px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">&times;</button>
+      </div>
+      
+      <!-- Search Input in Modal -->
+      <div style="margin-bottom: 16px;">
+        <input type="text" id="modal-showcase-search" class="text-input" placeholder="🔍 ค้นหาสินค้าด้วยชื่อ หรือ รหัสสินค้า..." style="margin: 0; font-size: 14px; padding: 12px 16px;">
+      </div>
+
+      <!-- Scrollable Grid Container -->
+      <div id="modal-showcase-grid" style="flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; padding: 4px;">
+        <!-- Dynamically populated product cards -->
       </div>
     </div>
   </div>
@@ -636,9 +679,11 @@
         var urlEl = document.getElementById('setting-n8n-url');
         var userEl = document.getElementById('setting-n8n-user');
         var passEl = document.getElementById('setting-n8n-pass');
+        var tiktokUserEl = document.getElementById('setting-tiktok-username');
         if (urlEl) urlEl.value = localStorage.getItem('n8nUrl') || 'http://localhost:5678';
         if (userEl) userEl.value = localStorage.getItem('n8nUser') || '';
         if (passEl) passEl.value = localStorage.getItem('n8nPass') || '';
+        if (tiktokUserEl) tiktokUserEl.value = localStorage.getItem('tiktokUsername') || '';
       }
     }
   </script>
