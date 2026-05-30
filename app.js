@@ -525,6 +525,27 @@ function setupFormListeners() {
   // Filter & Search History
   historySearch.addEventListener('input', applyHistoryFilters);
   historyFilterStatus.addEventListener('change', applyHistoryFilters);
+
+  // Prepare TikTok from Merge Tab Completed state
+  const btnMergePrepTiktok = document.getElementById('btn-merge-prep-tiktok');
+  if (btnMergePrepTiktok) {
+    btnMergePrepTiktok.addEventListener('click', () => {
+      const job = window.lastCompletedMergeJob;
+      if (job) {
+        const id = job.id;
+        const videoUrl = job.final_video || '';
+        const description = job.prouduct_description || job.product_description || '';
+        const caption = job.caption || '';
+        const link = job.tiktok_link || '';
+        const status = job.tiktok_status || 'pending';
+        const tiktokVideoUrl = job.tiktok_video_url || '';
+        
+        openTikTokModal(id, videoUrl, description, caption, link, status, tiktokVideoUrl);
+      } else {
+        alert('ไม่พบข้อมูลงานล่าสุด กรุณาลองใหม่อีกครั้ง หรือเข้าเตรียมจากคลังประวัติงาน');
+      }
+    });
+  }
 }
 
 // Enable/Disable Merge Button
@@ -935,12 +956,15 @@ function startMergePolling(n8nUrl, headers, productId) {
       const data = await response.json();
       console.log("Merge Poll Status Data:", data);
 
-      if (data.final_video && data.final_video !== 'wait' && data.final_video.startsWith('http')) {
+      const jobData = data.json || data;
+      if (jobData.final_video && jobData.final_video !== 'wait' && jobData.final_video.startsWith('http')) {
         clearInterval(mergePollInterval);
         mergePollInterval = null;
 
+        window.lastCompletedMergeJob = jobData;
+
         appState.merge.status = 'completed';
-        appState.merge.videoUrl = data.final_video;
+        appState.merge.videoUrl = jobData.final_video;
         appState.merge.progressStep = 4;
         updateMergeUI();
         saveAppState();
