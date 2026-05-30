@@ -7,21 +7,21 @@ echo [1/2] Starting HTTP Server on port 8080...
 echo [2/2] Opening browser...
 echo.
 
-:: Try Python 3 first
-python --version >nul 2>&1
+:: Try Python (py launcher) first as it is confirmed working
+py --version >nul 2>&1
 if %errorlevel% == 0 (
-    echo Using Python to serve...
+    echo Using Python (py) Custom Server...
     start "" "http://localhost:8080"
-    python -m http.server 8080
+    py dashboard_server.py
     goto :end
 )
 
-:: Try Python (py launcher)
-py --version >nul 2>&1
+:: Try Python 3
+python --version >nul 2>&1
 if %errorlevel% == 0 (
-    echo Using Python (py) to serve...
+    echo Using Python Custom Server...
     start "" "http://localhost:8080"
-    py -m http.server 8080
+    python dashboard_server.py
     goto :end
 )
 

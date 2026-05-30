@@ -532,7 +532,12 @@
             </div>
             <div class="form-group">
               <label>รหัสสินค้าตะกร้า TikTok (Product ID / Link)</label>
-              <input type="text" id="tiktok-link" class="text-input" placeholder="ใส่รหัสสินค้า เช่น 1730381947784366611">
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <select id="tiktok-showcase-select" class="text-input" style="font-size: 13px; font-weight: 500;">
+                  <option value="">-- เลือกจากสินค้าโชว์เคสที่ดูดเข้าระบบไว้ --</option>
+                </select>
+                <input type="text" id="tiktok-link" class="text-input" placeholder="ใส่รหัสสินค้า เช่น 1730381947784366611">
+              </div>
             </div>
             <div class="form-group">
               <label>🎬 ลิงค์วิดีโอที่โพสต์ (TikTok Video URL)</label>

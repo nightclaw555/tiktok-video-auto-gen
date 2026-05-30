@@ -1598,6 +1598,13 @@ function openTikTokModal(id, videoUrl, description, caption, link, status, tikto
   // Set Status
   tiktokStatus.value = status || 'pending';
   
+  // Load showcase products dropdown
+  try {
+    loadShowcaseProducts(link || '');
+  } catch (err) {
+    console.error(err);
+  }
+  
   // Show Modal
   tiktokModal.classList.remove('hidden');
 }
@@ -1686,3 +1693,48 @@ if (btnSaveTikTok) {
     }
   });
 }
+
+// Load showcase products from local API
+async function loadShowcaseProducts(selectedProductId = '') {
+  const select = document.getElementById('tiktok-showcase-select');
+  if (!select) return;
+
+  select.innerHTML = '<option value="">-- กำลังโหลดสินค้าโชว์เคส... --</option>';
+
+  try {
+    const response = await fetch('/api/get-showcase');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const products = await response.json();
+    let html = '<option value="">-- เลือกจากสินค้าโชว์เคสที่ดูดเข้าระบบไว้ --</option>';
+    
+    if (Array.isArray(products)) {
+      // Sort alphabetically by name
+      products.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      products.forEach(p => {
+        const isSelected = String(p.product_id) === String(selectedProductId) ? 'selected' : '';
+        html += `<option value="${p.product_id}" ${isSelected}>🛍️ ${p.name} (${p.product_id})</option>`;
+      });
+    }
+    
+    select.innerHTML = html;
+  } catch (err) {
+    console.error('Failed to load showcase products:', err);
+    select.innerHTML = '<option value="">❌ โหลดสินค้าโชว์เคสไม่สำเร็จ (ยังไม่เคยดูดสินค้าเข้าระบบ)</option>';
+  }
+}
+
+// Bind showcase select change event
+document.addEventListener('DOMContentLoaded', () => {
+  const select = document.getElementById('tiktok-showcase-select');
+  const input = document.getElementById('tiktok-link');
+  if (select && input) {
+    select.addEventListener('change', () => {
+      const val = select.value;
+      if (val) {
+        input.value = val;
+      }
+    });
+  }
+});
+
