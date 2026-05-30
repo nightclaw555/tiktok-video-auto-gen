@@ -529,8 +529,44 @@ function setupFormListeners() {
   // Prepare TikTok from Merge Tab Completed state
   const btnMergePrepTiktok = document.getElementById('btn-merge-prep-tiktok');
   if (btnMergePrepTiktok) {
-    btnMergePrepTiktok.addEventListener('click', () => {
-      const job = window.lastCompletedMergeJob;
+    btnMergePrepTiktok.addEventListener('click', async () => {
+      let job = window.lastCompletedMergeJob;
+      
+      // Fallback: If not cached in memory, fetch directly from n8n using active Product ID
+      if (!job) {
+        const productId = mergeProductId.value.trim() || appState.merge.productId;
+        if (!productId) {
+          alert('ไม่พบรหัสสินค้า (Product ID) ในหน้าจอนี้ กรุณาป้อนรหัสสินค้า หรือเปิดจากหน้าคลังประวัติงานแทนครับ');
+          return;
+        }
+        
+        btnMergePrepTiktok.disabled = true;
+        const originalText = btnMergePrepTiktok.innerHTML;
+        btnMergePrepTiktok.innerHTML = '<span>⏳ กำลังดึงข้อมูล...</span>';
+        
+        try {
+          const { headers, n8nUrl } = getAuthHeaders();
+          const response = await fetch(`${n8nUrl}/webhook/check-video-status?product_id=${productId}`);
+          if (response.ok) {
+            const data = await response.json();
+            const jobData = data.json || data;
+            if (jobData && jobData.final_video && jobData.final_video !== 'wait') {
+              window.lastCompletedMergeJob = jobData;
+              job = jobData;
+            } else {
+              throw new Error('งานนี้ยังไม่ได้ทำการรวมเสียง หรือไม่พบวิดีโอสำเร็จรูป');
+            }
+          } else {
+            throw new Error(`n8n Webhook ส่งกลับสถานะ ${response.status}`);
+          }
+        } catch (err) {
+          alert(`ดึงข้อมูลไม่สำเร็จ: ${err.message}`);
+        } finally {
+          btnMergePrepTiktok.disabled = false;
+          btnMergePrepTiktok.innerHTML = originalText;
+        }
+      }
+      
       if (job) {
         const id = job.id;
         const videoUrl = job.final_video || '';
@@ -541,8 +577,6 @@ function setupFormListeners() {
         const tiktokVideoUrl = job.tiktok_video_url || '';
         
         openTikTokModal(id, videoUrl, description, caption, link, status, tiktokVideoUrl);
-      } else {
-        alert('ไม่พบข้อมูลงานล่าสุด กรุณาลองใหม่อีกครั้ง หรือเข้าเตรียมจากคลังประวัติงาน');
       }
     });
   }
